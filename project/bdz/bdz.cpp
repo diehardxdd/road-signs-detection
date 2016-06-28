@@ -84,7 +84,7 @@ int main()
 
 	///загрузка картинки
 	bgrImage = imread("U:\\image\\3.jpg");
-	blur(bgrImage, bgrImage, Size(5, 5));
+	//blur(bgrImage, bgrImage, Size(5, 5));
 	cvtColor(bgrImage, hsvImage, CV_BGR2HSV);
 
 	Mat low, high;
@@ -123,6 +123,22 @@ int main()
 		}
 	}
 
+	///Круги
+	vector<vector<Point>> ffconts;
+	for (int i = 0; i < nconts.size(); i++)
+	{
+		double area = fabs(contourArea(nconts[i]));
+		double perim = arcLength(nconts[i], true);
+		// 1/4*CV_PI = 0,079577
+		if (area / (perim * perim) > 0.07 && area / (perim * perim)< 0.097)
+		{
+			ffconts.push_back(nconts[i]);
+			nconts.erase(nconts.begin() + i);
+			vector<vector<Point>>(nconts).swap(nconts);
+			i--;
+		}
+	}
+
 	///Определение области знака квадратом
 	for (int i = 0; i < nconts.size(); i++)
 	{
@@ -142,49 +158,43 @@ int main()
 		maxx = 0, minx = 10000, maxy = 0, miny = 10000;
 	}
 	///конец
-	
-	///Круги
-	vector<vector<Point>> ffconts;
-	for (int i = 0; i < nconts.size(); i++)
-	{
-		double area = fabs(contourArea(nconts[i]));
-		double perim = arcLength(nconts[i],true);
-		// 1/4*CV_PI = 0,079577
-		if (area / (perim * perim) > 0.07 && area / (perim * perim)< 0.097) 
-		{ 
-			ffconts.push_back(nconts[i]);
-			nconts.erase(nconts.begin() + i);
-			vector<vector<Point>> (nconts).swap(nconts);
-			i--;
-		}
-	}
-	
-	///Тест
-	//Ptr<LineSegmentDetector> ls = createLineSegmentDetector(LSD_REFINE_STD);
-
-	//vector<Vec4f> lines_std;
-	//// Detect the lines
-	//ls->detect(image, lines_std);
-	//double duration_ms = (double(getTickCount()) - start) * 1000 / getTickFrequency();
-	//std::cout << "It took " << duration_ms << " ms." << std::endl;
-	//// Show found lines
-	//Mat drawnLines(image);
-	//ls->drawSegments(drawnLines, lines_std);
-	//imshow("Standard refinement", drawnLines);
-	
-
-
+		
 	///Квадраты и треугольники
-	//Ptr<LineSegmentDetector> ls = createLineSegmentDetector(LSD_REFINE_STD);
-	//vector<Vec4f> lines_std;
-	//drawContours(ncont, nconts, -1, 255, 2, 8);
-	//ls->detect(ncont, lines_std);
-	//ls->drawSegments(ncont, lines_std);
+	//Подготовка
+	vector<vector<Point>> etalon;
+	vector<Point> pnte;
+	for (int i = 0; i < fconts.size(); i++)
+	{
+			pnte.push_back(fconts[i][0]);
+			for (int k = (fconts[i][0].y+1); k < fconts[i][1].y; k++)
+			{
+				pnte.push_back(Point(fconts[i][0].x, k));
+			}
+			pnte.push_back(fconts[i][1]);
+			for (int k = (fconts[i][1].x + 1); k < fconts[i][2].x; k++)
+			{
+				pnte.push_back(Point(k,fconts[i][1].y));
+			}
+			pnte.push_back(fconts[i][2]);
+			for (int k = (fconts[i][2].y - 1); k > fconts[i][3].y; k--)
+			{
+				pnte.push_back(Point(fconts[i][2].x, k));
+			}
+			pnte.push_back(fconts[i][3]);
+			for (int k = (fconts[i][3].x - 1); k > fconts[i][0].x; k--)
+			{
+				pnte.push_back(Point(k,fconts[i][3].y));
+			}
+			etalon.push_back(pnte);
+			pnte.clear();
+	}
+
+	//
 
 	///Отрисовка контуров
-	//drawContours(bgrImage, nconts, -1, Scalar(0, 255, 0), 2, 8);
-	//drawContours(bgrImage, ffconts, -1, Scalar(255, 0, 255), 2, 8);
-	//drawContours(bgrImage, fconts, -1, Scalar(0, 0, 255), 2, 8);
+	drawContours(bgrImage, nconts, -1, Scalar(0, 255, 0), 2, 8);
+	drawContours(bgrImage, ffconts, -1, Scalar(0, 255, 0), 2, 8);
+	drawContours(bgrImage, etalon, -1, Scalar(0, 0, 255), 2, 8);
 	//drawContours(bgrImage, f1conts, -1, Scalar(255, 0, 0), 2, 8);
 	drawContours(ncont, nconts, -1, 255, 2, 8);
 
